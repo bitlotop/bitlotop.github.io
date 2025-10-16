@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BitLoTop Airdrop</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background:#f7fafc; padding:20px; color:#111; }
+    .card { background:#fff; max-width:980px; margin:20px auto; padding:20px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    input, textarea, button, select { font-size:14px; }
+    textarea { width:100%; min-height:160px; }
+    .row { display:flex; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+    .muted { color:#666; font-size:13px; }
+    .log { white-space:pre-wrap; background:#0b1220; color:#e6f3ff; padding:12px; border-radius:8px; max-height:300px; overflow:auto; }
+    label { font-weight:600; }
+    .summary { background:#f1f5f9; padding:10px; border-radius:8px; }
+    .small { font-size:13px; color:#555; }
+    .btn { padding:8px 12px; border-radius:6px; cursor:pointer; }
+    .btn-primary { background:#16a34a; color:#fff; border:none; }
+    .btn-ghost { background:#e2e8f0; border:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>BitLoTop Airdrop</h1>
+    <p class="muted">Private airdrop tool — sequential sends with batch preview & gas estimation.</p>
+
+    <div class="row">
+      <button id="connectBtn" class="btn btn-ghost">Connect Wallet</button>
+      <div id="walletInfo" class="small">Not connected</div>
+    </div>
+
+    <hr>
+
+    <!-- 🧩 RPC and Gas Settings -->
+    <h3>RPC / Gas Settings</h3>
+    <label for="rpcSelect">RPC Endpoint:</label>
+    <div class="row">
+      <select id="rpcSelect">
+        <option value="https://bsc-dataseed.binance.org">Default — Binance RPC</option>
+        <option value="https://bsc-dataseed1.defibit.io">Defibit RPC</option>
+        <option value="https://bsc-dataseed1.ninicoin.io">Ninicoin RPC</option>
+        <option value="https://bsc-dataseed1.bnbchain.org">BNBChain RPC</option>
+        <option value="">Custom (paste below)</option>
+      </select>
+    </div>
+    <input id="rpcCustom" placeholder="https://your-rpc-url.com" />
+
+    <div class="row">
+      <label for="manualGas">Gas price (Gwei):</label>
+      <select id="gasPreset" style="flex:1;">
+        <option value="">Not fetched</option>
+      </select>
+      <input id="manualGas" type="number" step="0.1" placeholder="Auto" style="width:120px;">
+      <button type="button" id="btnFetchGas" class="btn btn-ghost" style="flex:0;">Fetch Gas</button>
+    </div>
+    <span id="gasInfo" class="small muted"></span>
+
+    <hr>
+
+    <h3>Token to send</h3>
+    <input id="tokenAddress" placeholder="Token contract (BEP20)" />
+    <button id="loadToken">Load token</button>
+    <div id="tokenInfo"></div>
+
+    <hr>
+
+    <h3>Recipients</h3>
+    <textarea id="recipients" rows="8" placeholder="0xabc...,1.0"></textarea>
+    <div id="summary"></div>
+
+    <button id="previewBtn">Preview</button>
+    <button id="airdropBtn">Start Airdrop</button>
+
+    <h3>Logs</h3>
+    <pre id="log"></pre>
+  </div>
+
+<script src="ethers.umd.min.js"></script>
+<script>
+let provider, signer, account, tokenContract, tokenDecimals=18, tokenSymbol='TKN';
+const log = (...args)=>{document.getElementById('log').textContent += args.join(' ') + '\\n'}
+
+// === RPC & Gas Helpers ===
+function getRpcUrl() {
+  const sel = document.getElementById('rpcSelect').value.trim();
+  const custom = document.getElementById('rpcCustom').value.trim();
+  return custom || sel || 'https://bsc-dataseed.binance.org';
+}
+
+function getManualGasWei() {
+  const val = document.getElementById('manualGas').value.trim();
+  if(!val) return null;
+  const gwei = parseFloat(val);
+  if(isNaN(gwei) || gwei <= 0) return null;
+  return '0x' + (BigInt(Math.round(gwei * 1e9))).toString(16);
+}
+
+// === Connect Wallet ===
+async function connect() {
+  if (!window.ethereum) return alert("MetaMask required");
+  await window.ethereum.request({ method: "eth_requestAccounts" });
+  provider = new ethers.BrowserProvider(window.ethereum);
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  const bal = await provider.getBalance(account);
+  document.getElementById('walletInfo').innerHTML = 
+    `Connected: ${account}<br>BNB: ${ethers.formatEther(bal)}`;
+  log("Connected wallet", account);
+  await fetchAndDisplayGas(); // 🆕 auto-fetch gas after wallet connect
+}
+
+// === Load Token Info ===
+async function loadToken() {
+  const addr = document.getElementById('tokenAddress').value.trim();
+  if(!addr) return alert("Enter token address");
+  const abi = [
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function balanceOf(address) view returns (uint256)",
+    "function transfer(address,uint256) returns (bool)"
+  ];
+  tokenContract = new ethers.Contract(addr, abi, signer);
+  tokenSymbol = await tokenContract.symbol();
+  tokenDecimals = await tokenContract.decimals();
+  const bal = await tokenContract.balanceOf(account);
+  document.getElementById('tokenInfo').innerHTML = 
+    `${tokenSymbol} (${tokenDecimals} decimals)<br>Your token balance: ${ethers.formatUnits(bal, tokenDecimals)}`;
+  log("Token loaded", tokenSymbol, "decimals", tokenDecimals);
+}
+
+// === Preview ===
+document.getElementById('previewBtn').onclick = ()=>{
+  const lines = document.getElementById('recipients').value.trim().split(/\\n+/);
+  const valid = lines.filter(l=>/^0x[a-fA-F0-9]{40},/.test(l));
+  document.getElementById('summary').innerHTML = `Recipients: ${valid.length}`;
+};
+
+// === Airdrop ===
+document.getElementById('airdropBtn').onclick = sendAirdrop;
+async function sendAirdrop() {
+  const lines = document.getElementById('recipients').value.trim().split(/\\n+/);
+  const valid = lines.filter(l=>/^0x[a-fA-F0-9]{40},/.test(l));
+  if(valid.length===0) return alert("No valid addresses");
+  log("Starting airdrop...");
+  const manualGas = getManualGasWei();
+
+  for (const line of valid) {
+    const [addr, amountStr] = line.split(',');
+    const amount = ethers.parseUnits(amountStr.trim(), tokenDecimals);
+    const data = tokenContract.interface.encodeFunctionData("transfer",[addr,amount]);
+    const txParams = { from: account, to: tokenContract.target, data: data };
+    if (manualGas) {
+      txParams.gasPrice = manualGas;
+      log("Using manual gas price:", manualGas);
+    }
+    try {
+      const est = await provider.estimateGas(txParams);
+      txParams.gasLimit = est + 5000n;
+      const tx = await signer.sendTransaction(txParams);
+      log("Tx sent:", tx.hash);
+      const rcpt = await tx.wait();
+      log("Confirmed:", rcpt.hash);
+    } catch(e) {
+      log("Error:", e.message);
+    }
+  }
+  log("Airdrop complete.");
+}
+
+// === Gas Fetch Logic ===
+async function fetchAndDisplayGas() {
+  const rpc = getRpcUrl();
+  const select = document.getElementById('gasPreset');
+  const info = document.getElementById('gasInfo');
+  try {
+    const res = await fetch(rpc, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] })
+    });
+    const data = await res.json();
+    const baseGwei = Number(BigInt(data.result)) / 1e9;
+    if (isNaN(baseGwei) || baseGwei <= 0) throw new Error("Invalid gas");
+    const low = (baseGwei * 0.8).toFixed(1);
+    const medium = (baseGwei * 1.0).toFixed(1);
+    const high = (baseGwei * 1.3).toFixed(1);
+    select.innerHTML = `
+      <option value="">Select gas</option>
+      <option value="${low}">Low (${low} Gwei)</option>
+      <option value="${medium}" selected>Medium (${medium} Gwei)</option>
+      <option value="${high}">High (${high} Gwei)</option>
+    `;
+    document.getElementById('manualGas').value = medium;
+    info.textContent = `Network gas ≈ ${baseGwei.toFixed(1)} Gwei (auto-fetched)`;
+  } catch (e) {
+    info.textContent = "Could not fetch gas price";
+    select.innerHTML = `<option value="">Auto fetch failed</option>`;
+  }
+}
+document.getElementById('btnFetchGas').addEventListener('click', fetchAndDisplayGas);
+document.getElementById('gasPreset').addEventListener('change', (e) => {
+  const val = e.target.value;
+  if (val) document.getElementById('manualGas').value = val;
+});
+document.getElementById('connectBtn').onclick = connect;
+document.getElementById('loadToken').onclick = loadToken;
+</script>
+</body>
+</html>
