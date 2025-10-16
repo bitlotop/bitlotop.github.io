@@ -34,7 +34,7 @@
 
     <hr/>
 
-    <!-- === MINIMAL ADDON: RPC + Gas Controls === -->
+    <!-- === RPC + Gas Controls === -->
     <div style="margin-top:10px; border:1px solid #e2e8f0; padding:10px; border-radius:8px;">
       <label>RPC Endpoint</label>
       <select id="rpcSelect" style="width:100%;margin-bottom:6px;">
@@ -56,23 +56,18 @@
       </div>
       <div id="gasInfo" class="small muted" style="margin-top:6px;"></div>
     </div>
-    <!-- === end addon === -->
 
     <hr/>
 
     <div>
       <label>Token to send</label>
       <div class="row" style="align-items:center">
-        <select id="tokenSelect">
-          <option value="0x8a128ae8823202e3ad53431319034a2ede9be9cc">BitLoTop — 0x8a128a...9be9cc</option>
-          <option value="">Custom token (paste address)</option>
-        </select>
-        <input id="tokenAddress" placeholder="0x..." style="flex:1; padding:8px; border-radius:6px; border:1px solid #ddd;" value="0x8a128ae8823202e3ad53431319034a2ede9be9cc" />
-        <button id="btnLoadToken" class="btn btn-ghost">Load token</button>
+        <input id="tokenAddress" value="0x8a128ae8823202e3ad53431319034a2ede9be9cc" readonly style="flex:1; padding:8px; border-radius:6px; border:1px solid #ddd;" />
+        <button id="btnLoadToken" class="btn btn-ghost">Fetch Info</button>
       </div>
       <div class="row" style="margin-top:8px;">
-        <div class="muted">Symbol: <span id="tokenSymbol">BitLoTop</span></div>
-        <div class="muted" style="margin-left:12px">Decimals: <span id="tokenDecimals">18</span></div>
+        <div class="muted">Symbol: <span id="tokenSymbol">-</span></div>
+        <div class="muted" style="margin-left:12px">Decimals: <span id="tokenDecimals">-</span></div>
         <div class="muted" style="margin-left:12px">Your token balance: <span id="tokenBalance">-</span></div>
       </div>
     </div>
@@ -90,7 +85,6 @@
         <div>Estimated gas per tx: <b id="estGas">-</b></div>
         <div style="margin-left:auto"><button id="btnPreview" class="btn btn-ghost">Preview</button> <button id="btnStart" class="btn btn-primary">Start Airdrop</button></div>
       </div>
-      <div class="muted" style="margin-top:6px">You can select the token above or paste any BEP-20 token address. The UI will fetch symbol/decimals and your token balance when you press <strong>Load token</strong> or after wallet connect.</div>
     </div>
 
     <hr/>
@@ -106,12 +100,11 @@
       <strong>Summary</strong>
       <div id="summaryText" class="small">No preview yet.</div>
     </div>
-
-    <div style="margin-top:12px" class="small muted">This page is static and runs in the browser. It does <em>sequential</em> transfers (one transaction per recipient). Use the multisend contract variant for a single on-chain batch (not included here).</div>
   </div>
 
 <script>
-// Minimal Web3 helpers using window.ethereum (EIP-1193). No external libs required.
+const TOKEN_ADDRESS = "0x8a128ae8823202e3ad53431319034a2ede9be9cc";
+
 const logEl = document.getElementById('log');
 function log(...args){ logEl.textContent += "\n" + args.join(' '); logEl.scrollTop = logEl.scrollHeight; }
 function clearLog(){ logEl.textContent = ''; }
@@ -119,296 +112,105 @@ function clearLog(){ logEl.textContent = ''; }
 let provider = null;
 let account = null;
 
-// ----- ADDON HELPERS (minimal) -----
 function getRpcUrl() {
   const sel = document.getElementById('rpcSelect').value.trim();
   const custom = document.getElementById('rpcCustom').value.trim();
   return custom || sel || 'https://bsc-dataseed.binance.org';
 }
-
 function getManualGasWei() {
   const val = document.getElementById('manualGas').value.trim();
   if(!val) return null;
   const gwei = parseFloat(val);
   if(isNaN(gwei) || gwei <= 0) return null;
-  // return hex-encoded wei string for eth_sendTransaction/eth_estimateGas
   return '0x' + (BigInt(Math.round(gwei * 1e9))).toString(16);
 }
 
 async function fetchAndDisplayGas() {
   const rpc = getRpcUrl();
-  const select = document.getElementById('gasPreset');
   const info = document.getElementById('gasInfo');
   info.textContent = 'Fetching gas price...';
   try {
-    const res = await fetch(rpc, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] })
-    });
+    const res = await fetch(rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }) });
     const data = await res.json();
     const baseGwei = Number(BigInt(data.result)) / 1e9;
-    if (isNaN(baseGwei) || baseGwei <= 0) throw new Error('Invalid gas');
-    const low = (baseGwei * 0.8).toFixed(1);
-    const medium = (baseGwei * 1.0).toFixed(1);
-    const high = (baseGwei * 1.3).toFixed(1);
-    select.innerHTML = `
-      <option value="">Select gas</option>
-      <option value="${low}">Low (${low} Gwei)</option>
-      <option value="${medium}" selected>Medium (${medium} Gwei)</option>
-      <option value="${high}">High (${high} Gwei)</option>
-    `;
-    document.getElementById('manualGas').value = medium;
-    info.textContent = `Network gas ≈ ${baseGwei.toFixed(1)} Gwei (auto-fetched via selected RPC)`;
-    log('Gas fetched:', baseGwei.toFixed(1), 'Gwei from', rpc);
+    let g = Math.max(baseGwei, 1);
+    document.getElementById('manualGas').value = g.toFixed(1);
+    info.textContent = `Network gas ≈ ${g.toFixed(1)} Gwei (auto-fetched via selected RPC)`;
+    log('Gas fetched', g.toFixed(1), 'Gwei');
   } catch (e) {
     info.textContent = 'Could not fetch gas price';
-    select.innerHTML = `<option value="">Auto fetch failed</option>`;
     log('Gas fetch failed', e.message || e);
   }
 }
-
-document.getElementById('btnFetchGas').addEventListener('click', fetchAndDisplayGas);
-document.getElementById('gasPreset').addEventListener('change', (e) => {
-  const val = e.target.value;
-  if (val) document.getElementById('manualGas').value = val;
-});
-// ----- END ADDON HELPERS -----
+document.getElementById('btnFetchGas').onclick = fetchAndDisplayGas;
 
 async function connect() {
-  if(!window.ethereum){ alert('MetaMask or other injected wallet required'); return; }
+  if(!window.ethereum){ alert('MetaMask required'); return; }
   provider = window.ethereum;
-  try {
-    const accounts = await provider.request({ method: 'eth_requestAccounts' });
-    account = accounts[0];
-    document.getElementById('account').textContent = 'Connected: ' + account;
-    log('Connected', account);
-    await refreshBalances();
-    // ONLY fetch gas after wallet connected (per request)
-    await fetchAndDisplayGas();
-  } catch(e) {
-    log('Connection failed', e.message || e);
-  }
+  const accounts = await provider.request({ method: 'eth_requestAccounts' });
+  account = accounts[0];
+  document.getElementById('account').textContent = 'Connected: ' + account;
+  log('Connected', account);
+  await refreshBalances();
+  await fetchAndDisplayGas();
 }
-
 document.getElementById('btnConnect').onclick = connect;
 
 async function refreshBalances(){
   if(!account) return;
-  try {
-    const bnb = await provider.request({ method:'eth_getBalance', params:[account, 'latest'] });
-    const bnbEth = parseInt(bnb,16) / (10**18);
-    document.getElementById('balances').textContent = 'BNB: ' + bnbEth.toFixed(6);
-  } catch(e){ log('BNB balance error', e.message || e); }
-  // load token info after connect or when user presses Load token button
+  const bnb = await provider.request({ method:'eth_getBalance', params:[account, 'latest'] });
+  const bnbEth = parseInt(bnb,16) / (10**18);
+  document.getElementById('balances').textContent = 'BNB: ' + bnbEth.toFixed(6);
   await loadTokenInfo();
 }
 
-// Utility: pad hex to 32 bytes
-function padHex(hex){ if(hex.startsWith('0x')) hex = hex.slice(2); return '0x' + hex.padStart(64,'0'); }
-function strip0x(hex){ return hex.startsWith('0x') ? hex.slice(2) : hex; }
-
-// ERC20 helpers (uses low-level eth_call)
-async function erc20_call(contract, data){
-  try {
-    return await provider.request({ method:'eth_call', params:[{ to: contract, data: data }, 'latest'] });
-  } catch(e) {
-    log('eth_call error', e.message || e);
-    throw e;
-  }
-}
-
-async function getTokenSymbol(contract){
+async function loadTokenInfo(){
   try{
-    const res = await erc20_call(contract, '0x95d89b41');
-    if(!res || res === '0x') return null;
-    const hex = res.slice(2);
-    let str = '';
-    for(let i=0;i<hex.length;i+=2){
-      const code = parseInt(hex.substr(i,2),16);
-      if(code === 0) break;
-      str += String.fromCharCode(code);
-    }
-    return str || null;
-  }catch(e){ return null; }
+    const symbolData = await provider.request({ method:'eth_call', params:[{ to:TOKEN_ADDRESS, data:'0x95d89b41' }, 'latest'] });
+    const decData = await provider.request({ method:'eth_call', params:[{ to:TOKEN_ADDRESS, data:'0x313ce567' }, 'latest'] });
+    const balData = await provider.request({ method:'eth_call', params:[{ to:TOKEN_ADDRESS, data:'0x70a08231'+account.slice(2).padStart(64,'0') }, 'latest'] });
+    const decimals = parseInt(decData,16) || 18;
+    const balance = BigInt(balData) / BigInt(10**decimals);
+    let symbol = '';
+    for(let i=2;i<symbolData.length;i+=2){ const c=parseInt(symbolData.substr(i,2),16); if(c>31 && c<127) symbol+=String.fromCharCode(c); }
+    document.getElementById('tokenSymbol').textContent = symbol || 'TKN';
+    document.getElementById('tokenDecimals').textContent = decimals;
+    document.getElementById('tokenBalance').textContent = balance.toString();
+    log('Token loaded', symbol, 'Decimals', decimals);
+  }catch(e){ log('Token info failed', e.message); }
 }
-
-async function getTokenDecimals(contract){
-  try{
-    const res = await erc20_call(contract, '0x313ce567');
-    if(!res || res === '0x') return 18;
-    return parseInt(res,16);
-  } catch(e){ return 18; }
-}
-
-async function getTokenBalance(contract, owner){
-  const data = '0x70a08231' + strip0x(owner).padStart(64,'0');
-  const res = await erc20_call(contract, data);
-  if(!res || res === '0x') return 0n;
-  return BigInt(res);
-}
-
-document.getElementById('tokenSelect').onchange = function(e){
-  const v = e.target.value;
-  if(v) document.getElementById('tokenAddress').value = v;
-};
-
 document.getElementById('btnLoadToken').onclick = loadTokenInfo;
 
-async function loadTokenInfo(){
-  const addr = document.getElementById('tokenAddress').value.trim();
-  if(!addr || !/^0x[0-9a-fA-F]{40}$/.test(addr)){ alert('Invalid token address'); return; }
-  document.getElementById('tokenSymbol').textContent = '...';
-  document.getElementById('tokenDecimals').textContent = '...';
-  try{
-    const sym = await getTokenSymbol(addr) || 'TKN';
-    const dec = await getTokenDecimals(addr);
-    document.getElementById('tokenSymbol').textContent = sym;
-    document.getElementById('tokenDecimals').textContent = dec;
-    if(account){
-      const bal = await getTokenBalance(addr, account);
-      const display = Number(bal) / (10 ** dec);
-      document.getElementById('tokenBalance').textContent = display.toString();
-    } else {
-      document.getElementById('tokenBalance').textContent = '-';
-    }
-    log('Token loaded', sym, 'decimals', dec);
-  }catch(e){ log('Load token failed', e.message || e); }
-}
-
-document.getElementById('file').onchange = (e)=>{
-  const f = e.target.files[0];
-  if(!f) return;
-  const r = new FileReader();
-  r.onload = (ev)=>{ document.getElementById('csv').value = ev.target.result; preview(); };
+document.getElementById('file').onchange = e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{document.getElementById('csv').value=ev.target.result; preview();};
   r.readAsText(f);
 };
 
 function parseList(){
-  const text = document.getElementById('csv').value.trim();
-  if(!text) return [];
-  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-  const out = [];
-  for(const line of lines){
-    const parts = line.split(/[, \t]+/).map(p=>p.trim());
-    if(parts.length < 2) continue;
-    const a = parts[0], am = parts[1];
-    if(!/^0x[0-9a-fA-F]{40}$/.test(a)){ log('Skipping invalid address', a); continue; }
-    if(isNaN(Number(am))){ log('Skipping invalid amount', am); continue; }
-    out.push({address: a, amount: am});
-  }
-  return out;
+  const lines=document.getElementById('csv').value.trim().split(/\r?\n/).filter(Boolean);
+  return lines.map(l=>{const [a,v]=l.split(/[, \t]+/);return{address:a.trim(),amount:v.trim()};}).filter(x=>/^0x[0-9a-fA-F]{40}$/.test(x.address));
 }
 
-function preview(){
+async function preview(){
   clearLog();
-  const list = parseList();
-  document.getElementById('count').textContent = list.length;
-  const dec = parseInt(document.getElementById('tokenDecimals').textContent || '18');
-  let total = 0n;
-  for(const r of list){
-    const parts = r.amount.split('.');
-    let whole = BigInt(parts[0] || '0');
-    let frac = '0';
-    if(parts[1]) frac = parts[1].padEnd(dec,'0').slice(0,dec);
-    const val = whole * BigInt(10)**BigInt(dec) + BigInt(frac);
-    total += val;
-  }
-  const totalHuman = total === 0n ? '0' : (Number(total) / (10 ** dec)).toString();
-  document.getElementById('total').textContent = totalHuman;
-  document.getElementById('summaryText').textContent = `Recipients: ${list.length} — Total tokens: ${totalHuman}`;
-  (async ()=>{
-    if(list.length === 0) return;
-    const tokenAddr = document.getElementById('tokenAddress').value.trim();
-    try{
-      const first = list[0];
-      const dec = parseInt(document.getElementById('tokenDecimals').textContent || '18');
-      const method = 'a9059cbb';
-      const toP = strip0x(first.address).padStart(64,'0');
-      const parts = first.amount.split('.');
-      let whole = BigInt(parts[0] || '0');
-      let frac = '0';
-      if(parts[1]) frac = parts[1].padEnd(dec,'0').slice(0,dec);
-      const amount = whole * BigInt(10)**BigInt(dec) + BigInt(frac);
-      const amountHex = amount.toString(16).padStart(64,'0');
-      const data = '0x' + method + toP + amountHex;
-      const from = account;
-      const estimate = await provider.request({ method:'eth_estimateGas', params:[{from: from, to: tokenAddr, data: data}] });
-      const est = parseInt(estimate,16);
-      document.getElementById('estGas').textContent = est.toString();
-      log('Estimated gas per transfer', est);
-      try{
-        const gp = await provider.request({ method:'eth_gasPrice', params:[] });
-        const gpInt = parseInt(gp,16);
-        const approxBNB = gpInt * est / (10**18);
-        document.getElementById('summaryText').textContent += ` — Est gas (per tx): ${est} gas (~${approxBNB.toFixed ? approxBNB.toFixed(6) : approxBNB} BNB at current gasPrice)`;
-      }catch(e){ }
-    }catch(e){ log('Gas estimate failed', e.message || e); }
-  })();
+  const list=parseList();
+  if(!list.length)return;
+  const dec=18;
+  const r=list[0];
+  const data='0xa9059cbb'+r.address.slice(2).padStart(64,'0')+(BigInt(Number(r.amount)*(10**dec)).toString(16)).padStart(64,'0');
+  const estimate=await provider.request({method:'eth_estimateGas',params:[{from:account,to:TOKEN_ADDRESS,data}]});
+  const est=parseInt(estimate,16);
+  log('Estimated gas per transfer',est);
+  const gp=await provider.request({method:'eth_gasPrice',params:[]});
+  let gasGwei=parseInt(gp,16)/1e9;
+  if(gasGwei<1)gasGwei=1;
+  const gasCostBNB=(est*gasGwei*1e-9).toFixed(6);
+  document.getElementById('estGas').textContent=est;
+  document.getElementById('summaryText').textContent=`Recipients: ${list.length} — Total tokens: ${list.reduce((a,b)=>a+Number(b.amount||0),0)} — Est gas (per tx): ${est} gas (~${gasCostBNB} BNB at ${gasGwei.toFixed(1)} Gwei)`;
 }
-
-document.getElementById('btnPreview').onclick = preview;
-
-async function sendAirdrop(){
-  const list = parseList();
-  if(!list.length){ alert('No recipients'); return; }
-  if(!account){ alert('Connect wallet first'); return; }
-  const tokenAddr = document.getElementById('tokenAddress').value.trim();
-  const dec = parseInt(document.getElementById('tokenDecimals').textContent || '18');
-
-  // apply manual gas if provided (minimal change)
-  const manualGas = getManualGasWei();
-
-  if(!confirm(`Send to ${list.length} recipients? This will create ${list.length} transactions from your wallet.`)) return;
-  for(let i=0;i<list.length;i++){
-    const r = list[i];
-    try{
-      const method = 'a9059cbb';
-      const toP = strip0x(r.address).padStart(64,'0');
-      const parts = r.amount.split('.');
-      let whole = BigInt(parts[0] || '0');
-      let frac = '0';
-      if(parts[1]) frac = parts[1].padEnd(dec,'0').slice(0,dec);
-      const amount = whole * BigInt(10)**BigInt(dec) + BigInt(frac);
-      const amountHex = amount.toString(16).padStart(64,'0');
-      const data = '0x' + method + toP + amountHex;
-      log(`Sending ${r.amount} to ${r.address} ...`);
-      const txParams = { from: account, to: tokenAddr, data: data };
-      if(manualGas){ txParams.gasPrice = manualGas; log('Using manual gasPrice (wei):', manualGas); }
-      try{
-        const est = await provider.request({ method:'eth_estimateGas', params:[txParams] });
-        txParams.gas = est;
-      }catch(e){ }
-      const txHash = await provider.request({ method:'eth_sendTransaction', params:[txParams] });
-      log('Tx sent:', txHash);
-      await waitForTx(txHash);
-      log('Confirmed:', txHash);
-      try{ await loadTokenInfo(); }catch(e){}
-    }catch(e){
-      log('Failed at', r.address, e.message || e);
-      return;
-    }
-  }
-  log('Airdrop complete.');
-}
-
-document.getElementById('btnStart').onclick = sendAirdrop;
-
-async function waitForTx(txHash){
-  log('Waiting for confirmation', txHash);
-  while(true){
-    try{
-      const receipt = await provider.request({ method:'eth_getTransactionReceipt', params:[txHash] });
-      if(receipt && receipt.blockNumber){ return receipt; }
-      await new Promise(r=>setTimeout(r,3000));
-    }catch(e){ await new Promise(r=>setTimeout(r,3000)); }
-  }
-}
-
-// On page load: don't auto-load token balances (per your request).
-window.addEventListener('load', async ()=>{
-  log('App ready — connect wallet to begin.');
-});
+document.getElementById('btnPreview').onclick=preview;
 </script>
 </body>
 </html>
