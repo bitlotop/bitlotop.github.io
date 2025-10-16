@@ -1,248 +1,190 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="robots" content="noindex" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>BitLoTop Airdrop</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; background:#f7fafc; padding:20px; color:#111; }
-    .card { background:#fff; max-width:980px; margin:20px auto; padding:20px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
-    input, textarea, button, select { font-size:14px; }
-    textarea { width:100%; min-height:160px; }
-    .row { display:flex; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap; }
-    .muted { color:#666; font-size:13px; }
-    .log { white-space:pre-wrap; background:#0b1220; color:#e6f3ff; padding:12px; border-radius:8px; max-height:300px; overflow:auto; }
-    label { font-weight:600; }
-    .summary { background:#f1f5f9; padding:10px; border-radius:8px; }
-    .small { font-size:13px; color:#555; }
-    .btn { padding:8px 12px; border-radius:6px; cursor:pointer; }
-    .btn-primary { background:#16a34a; color:#fff; border:none; }
-    .btn-ghost { background:#e2e8f0; border:none; }
+    body{font-family:Arial,Helvetica,sans-serif;background:#f7fafc;padding:20px;color:#111}
+    .card{background:#fff;max-width:980px;margin:20px auto;padding:20px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    textarea{width:100%;min-height:160px}
+    input,button,select,textarea{font-size:14px}
+    .btn{padding:8px 12px;border-radius:6px;cursor:pointer}
+    .btn-primary{background:#16a34a;color:#fff;border:none}
+    .btn-ghost{background:#e2e8f0;border:none}
+    .muted{color:#666;font-size:13px}
+    .log{white-space:pre-wrap;background:#0b1220;color:#e6f3ff;padding:12px;border-radius:8px;max-height:300px;overflow:auto}
+    .summary{background:#f1f5f9;padding:10px;border-radius:8px}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>BitLoTop Airdrop</h1>
-    <p class="muted">Private airdrop tool — sequential sends but with batch preview & gas estimation. Test with a few addresses first.</p>
+<div class="card">
+  <h1>BitLoTop Airdrop</h1>
+  <p class="muted">Private airdrop tool — sequential sends but with batch preview & gas estimation. Test with a few addresses first.</p>
 
+  <div class="row">
+    <button id="btnConnect" class="btn btn-ghost">Connect Wallet</button>
+    <div id="account" class="muted">Not connected</div>
+    <div id="balances" class="muted" style="margin-left:auto"></div>
+  </div>
+
+  <hr>
+
+  <div>
+    <label>RPC Endpoint</label><br>
+    <select id="rpcSelect" style="width:100%;margin-bottom:6px">
+      <option value="https://bsc-dataseed.binance.org">Default — Binance RPC</option>
+      <option value="https://bsc-dataseed1.defibit.io">Defibit RPC</option>
+      <option value="https://bsc-dataseed1.ninicoin.io">Ninicoin RPC</option>
+      <option value="https://bsc-dataseed1.bnbchain.org">BNBChain RPC</option>
+      <option value="">Custom (paste below)</option>
+    </select>
+    <input id="rpcCustom" placeholder="https://your-rpc-url.com" style="width:100%;margin-bottom:8px">
+    <label>Gas price (Gwei)</label>
     <div class="row">
-      <button id="btnConnect" class="btn btn-ghost">Connect Wallet</button>
-      <div id="account" class="small">Not connected</div>
-      <div id="balances" class="small" style="margin-left:auto"></div>
+      <input id="manualGas" type="number" step="0.1" placeholder="Auto" style="width:120px">
+      <button id="btnFetchGas" class="btn btn-ghost">Fetch Gas</button>
     </div>
+    <div id="gasInfo" class="muted" style="margin-top:6px"></div>
+  </div>
 
-    <hr/>
+  <hr>
 
-    <!-- === RPC + Gas Controls === -->
-    <div style="margin-top:10px; border:1px solid #e2e8f0; padding:10px; border-radius:8px;">
-      <label>RPC Endpoint</label>
-      <select id="rpcSelect" style="width:100%;margin-bottom:6px;">
-        <option value="https://bsc-dataseed.binance.org">Default — Binance RPC</option>
-        <option value="https://bsc-dataseed1.defibit.io">Defibit RPC</option>
-        <option value="https://bsc-dataseed1.ninicoin.io">Ninicoin RPC</option>
-        <option value="https://bsc-dataseed1.bnbchain.org">BNBChain RPC</option>
-        <option value="">Custom (paste below)</option>
-      </select>
-      <input id="rpcCustom" placeholder="https://your-rpc-url.com" style="width:100%;margin-bottom:8px;">
-
-      <label>Gas price (Gwei)</label>
-      <div class="row" style="align-items:center;gap:8px;">
-        <select id="gasPreset" style="flex:1;">
-          <option value="">Not fetched</option>
-        </select>
-        <input id="manualGas" type="number" step="0.1" placeholder="Auto" style="width:120px;">
-        <button type="button" id="btnFetchGas" class="btn btn-ghost" style="flex:0;">Fetch Gas</button>
-      </div>
-      <div id="gasInfo" class="small muted" style="margin-top:6px;"></div>
-    </div>
-
-    <hr/>
-
-    <div>
-      <label>Token to send</label>
-      <div class="row" style="align-items:center">
-        <input id="tokenAddress" value="0x8a128ae8823202e3ad53431319034a2ede9be9cc" readonly style="flex:1; padding:8px; border-radius:6px; border:1px solid #ddd;" />
-        <button id="btnLoadToken" class="btn btn-ghost">Fetch Info</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <div class="muted">Symbol: <span id="tokenSymbol">-</span></div>
-        <div class="muted" style="margin-left:12px">Decimals: <span id="tokenDecimals">-</span></div>
-        <div class="muted" style="margin-left:12px">Your token balance: <span id="tokenBalance">-</span></div>
-      </div>
-    </div>
-
-    <hr/>
-
-    <div>
-      <label>Upload CSV (address,amount) or paste below:</label><br/>
-      <input id="file" type="file" accept=".csv,.txt" />
-      <textarea id="csv" placeholder="0xabc...,1.0
-0xdef...,2.5"></textarea>
-      <div class="row" style="margin-top:8px;">
-        <div>Recipients: <b id="count">0</b></div>
-        <div>Total tokens to send: <b id="total">0</b></div>
-        <div>Estimated gas per tx: <b id="estGas">-</b></div>
-        <div style="margin-left:auto"><button id="btnPreview" class="btn btn-ghost">Preview</button> <button id="btnStart" class="btn btn-primary">Start Airdrop</button></div>
-      </div>
-    </div>
-
-    <hr/>
-
-    <div>
-      <h3>Logs</h3>
-      <div id="log" class="log">Waiting for action...</div>
-    </div>
-
-    <hr/>
-
-    <div class="summary">
-      <strong>Summary</strong>
-      <div id="summaryText" class="small">No preview yet.</div>
+  <div>
+    <label>Token to send</label><br>
+    <input id="tokenAddress" value="0x8a128ae8823202e3ad53431319034a2ede9be9cc"
+           readonly style="width:100%;padding:8px;border-radius:6px;border:1px solid #ddd">
+    <div class="muted" style="margin-top:6px">
+      Fixed token: BitLoTop — 18 decimals
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <hr>
+
+  <div>
+    <label>Upload CSV (address,amount) or paste below:</label><br>
+    <input id="file" type="file" accept=".csv,.txt">
+    <textarea id="csv" placeholder="0xabc...,1.0&#10;0xdef...,2.5"></textarea>
+    <div class="row" style="margin-top:8px">
+      <div>Recipients: <b id="count">0</b></div>
+      <div>Total tokens: <b id="total">0</b></div>
+      <div style="margin-left:auto">
+        <button id="btnPreview" class="btn btn-ghost">Preview</button>
+        <button id="btnStart" class="btn btn-primary">Start Airdrop</button>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Logs</h3>
+    <div id="log" class="log">Waiting for action...</div>
+  </div>
+
+  <hr>
+  <div class="summary"><strong>Summary</strong>
+    <div id="summaryText" class="muted">No preview yet.</div>
+  </div>
+</div>
+
 <script>
 const TOKEN_ADDRESS = "0x8a128ae8823202e3ad53431319034a2ede9be9cc";
+let provider=null,account=null;
 
-const logEl = document.getElementById('log');
-function log(...args){ logEl.textContent += "\n" + args.join(' '); logEl.scrollTop = logEl.scrollHeight; }
-function clearLog(){ logEl.textContent = ''; }
+function log(...a){const el=document.getElementById('log');el.textContent+='\n'+a.join(' ');el.scrollTop=el.scrollHeight;}
+function clearLog(){document.getElementById('log').textContent='';}
 
-let provider = null;
-let account = null;
-
-function getRpcUrl() {
-  const sel = document.getElementById('rpcSelect').value.trim();
-  const custom = document.getElementById('rpcCustom').value.trim();
-  return custom || sel || 'https://bsc-dataseed.binance.org';
-}
-function getManualGasWei() {
-  const val = document.getElementById('manualGas').value.trim();
-  if(!val) return null;
-  const gwei = parseFloat(val);
-  if(isNaN(gwei) || gwei <= 0) return null;
-  return '0x' + (BigInt(Math.round(gwei * 1e9))).toString(16);
+function getRpcUrl(){
+  const sel=document.getElementById('rpcSelect').value.trim();
+  const custom=document.getElementById('rpcCustom').value.trim();
+  return custom||sel||'https://bsc-dataseed.binance.org';
 }
 
-async function fetchAndDisplayGas() {
-  const rpc = getRpcUrl();
-  const info = document.getElementById('gasInfo');
-  info.textContent = 'Fetching gas price...';
-  try {
-    const res = await fetch(rpc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }) });
-    const data = await res.json();
-    const baseGwei = Number(BigInt(data.result)) / 1e9;
-    let g = Math.max(baseGwei, 1);
-    document.getElementById('manualGas').value = g.toFixed(1);
-    info.textContent = `Network gas ≈ ${g.toFixed(1)} Gwei (auto-fetched via selected RPC)`;
-    log('Gas fetched', g.toFixed(1), 'Gwei');
-  } catch (e) {
-    info.textContent = 'Could not fetch gas price';
-    log('Gas fetch failed', e.message || e);
-  }
+function getManualGasWei(){
+  const val=document.getElementById('manualGas').value.trim();
+  if(!val)return null;
+  const gwei=parseFloat(val);
+  if(isNaN(gwei)||gwei<=0)return null;
+  return '0x'+(BigInt(Math.round(gwei*1e9))).toString(16);
 }
-document.getElementById('btnFetchGas').onclick = fetchAndDisplayGas;
 
-async function connect() {
-  if(!window.ethereum){ alert('MetaMask required'); return; }
-  provider = window.ethereum;
-  const accounts = await provider.request({ method: 'eth_requestAccounts' });
-  account = accounts[0];
-  document.getElementById('account').textContent = 'Connected: ' + account;
-  log('Connected', account);
-  await refreshBalances();
+async function fetchAndDisplayGas(){
+  const rpc=getRpcUrl(); const info=document.getElementById('gasInfo');
+  info.textContent='Fetching gas...';
+  try{
+    const res=await fetch(rpc,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_gasPrice',params:[]})});
+    const data=await res.json();
+    const gwei=Number(BigInt(data.result))/1e9;
+    const gasVal=Math.max(gwei,1).toFixed(1);
+    document.getElementById('manualGas').value=gasVal;
+    info.textContent=`Network gas ≈ ${gasVal} Gwei (auto-fetched via selected RPC)`;
+    log('Gas fetched',gasVal,'Gwei');
+  }catch(e){info.textContent='Could not fetch gas';log('Gas fetch failed',e.message);}
+}
+document.getElementById('btnFetchGas').onclick=fetchAndDisplayGas;
+
+async function connect(){
+  if(!window.ethereum){alert('MetaMask required');return;}
+  provider=window.ethereum;
+  const accs=await provider.request({method:'eth_requestAccounts'});
+  account=accs[0];
+  document.getElementById('account').textContent='Connected: '+account;
+  const bal=await provider.request({method:'eth_getBalance',params:[account,'latest']});
+  const bnb=parseInt(bal,16)/(10**18);
+  document.getElementById('balances').textContent='BNB: '+bnb.toFixed(6);
   await fetchAndDisplayGas();
 }
-document.getElementById('btnConnect').onclick = connect;
+document.getElementById('btnConnect').onclick=connect;
 
-async function refreshBalances(){
-  if(!account) return;
-  const bnb = await provider.request({ method:'eth_getBalance', params:[account, 'latest'] });
-  const bnbEth = parseInt(bnb,16) / (10**18);
-  document.getElementById('balances').textContent = 'BNB: ' + bnbEth.toFixed(6);
-  await loadTokenInfo();
-}
-
-async function loadTokenInfo(){
-  try{
-    const symbolData = await provider.request({ method:'eth_call', params:[{ to:TOKEN_ADDRESS, data:'0x95d89b41' }, 'latest'] });
-    const decData = await provider.request({ method:'eth_call', params:[{ to:TOKEN_ADDRESS, data:'0x313ce567' }, 'latest'] });
-    const balData = await provider.request({ method:'eth_call', params:[{ to:TOKEN_ADDRESS, data:'0x70a08231'+account.slice(2).padStart(64,'0') }, 'latest'] });
-    const decimals = parseInt(decData,16) || 18;
-    const balance = BigInt(balData) / BigInt(10**decimals);
-    let symbol = '';
-    for(let i=2;i<symbolData.length;i+=2){ const c=parseInt(symbolData.substr(i,2),16); if(c>31 && c<127) symbol+=String.fromCharCode(c); }
-    document.getElementById('tokenSymbol').textContent = symbol || 'TKN';
-    document.getElementById('tokenDecimals').textContent = decimals;
-    document.getElementById('tokenBalance').textContent = balance.toString();
-    log('Token loaded', symbol, 'Decimals', decimals);
-  }catch(e){ log('Token info failed', e.message); }
-}
-document.getElementById('btnLoadToken').onclick = loadTokenInfo;
-
-document.getElementById('file').onchange = e=>{
-  const f=e.target.files[0]; if(!f)return;
+document.getElementById('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=ev=>{document.getElementById('csv').value=ev.target.result; preview();};
+  r.onload=ev=>{document.getElementById('csv').value=ev.target.result;preview();};
   r.readAsText(f);
 };
 
 function parseList(){
   const lines=document.getElementById('csv').value.trim().split(/\r?\n/).filter(Boolean);
-  return lines.map(l=>{const [a,v]=l.split(/[, \t]+/);return{address:a.trim(),amount:v.trim()};}).filter(x=>/^0x[0-9a-fA-F]{40}$/.test(x.address));
+  return lines.map(l=>{const [a,v]=l.split(/[, \t]+/);return{address:a.trim(),amount:v.trim()};})
+    .filter(x=>/^0x[0-9a-fA-F]{40}$/.test(x.address));
 }
 
-async function preview(){
-  clearLog();
+function preview(){
   const list=parseList();
-  if(!list.length)return;
-  const dec=18;
-  const r=list[0];
-  const data='0xa9059cbb'+r.address.slice(2).padStart(64,'0')+(BigInt(Number(r.amount)*(10**dec)).toString(16)).padStart(64,'0');
-  const estimate=await provider.request({method:'eth_estimateGas',params:[{from:account,to:TOKEN_ADDRESS,data}]});
-  const est=parseInt(estimate,16);
-  log('Estimated gas per transfer',est);
-  const gp=await provider.request({method:'eth_gasPrice',params:[]});
-  let gasGwei=parseInt(gp,16)/1e9;
-  if(gasGwei<1)gasGwei=1;
-  const gasCostBNB=(est*gasGwei*1e-9).toFixed(6);
-  document.getElementById('estGas').textContent=est;
-  document.getElementById('summaryText').textContent=`Recipients: ${list.length} — Total tokens: ${list.reduce((a,b)=>a+Number(b.amount||0),0)} — Est gas (per tx): ${est} gas (~${gasCostBNB} BNB at ${gasGwei.toFixed(1)} Gwei)`;
+  document.getElementById('count').textContent=list.length;
+  const total=list.reduce((a,b)=>a+Number(b.amount||0),0);
+  document.getElementById('total').textContent=total;
+  document.getElementById('summaryText').textContent=`Recipients: ${list.length} — Total tokens: ${total}`;
+  log('Preview ready',list.length,'recipients');
 }
 document.getElementById('btnPreview').onclick=preview;
 
-async function startAirdrop() {
+async function startAirdrop(){
   clearLog();
-  const list = parseList();
-  if (!list.length) return log("No recipients to send");
-  log("Starting airdrop to", list.length, "recipients");
+  const list=parseList();
+  if(!list.length)return log('No recipients to send');
+  log('Starting airdrop to',list.length,'recipients');
 
-  const gasWei = getManualGasWei();
-  const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
-  const token = new ethers.Contract(
-    TOKEN_ADDRESS,
-    ["function transfer(address to, uint256 amount) public returns (bool)"],
-    signer
-  );
+  const gasWei=getManualGasWei()||'0x3B9ACA00'; //1 Gwei fallback
+  const dec=18;
 
-  for (const item of list) {
-    try {
-      const amount = ethers.utils.parseUnits(item.amount, 18);
-      log(`Sending ${item.amount} to ${item.address} ...`);
-      const tx = await token.transfer(item.address, amount, { gasPrice: gasWei });
-      log("Tx sent:", tx.hash);
-      await tx.wait();
-      log("Confirmed:", tx.hash);
-    } catch (e) {
-      log("Error:", e.message || e);
-    }
+  for(const r of list){
+    const amtHex=(BigInt(Math.floor(Number(r.amount)*10**dec))).toString(16).padStart(64,'0');
+    const data='0xa9059cbb'+r.address.slice(2).padStart(64,'0')+amtHex;
+    const tx={from:account,to:TOKEN_ADDRESS,data:data,gasPrice:gasWei};
+    try{
+      log(`Sending ${r.amount} → ${r.address}`);
+      const txHash=await provider.request({method:'eth_sendTransaction',params:[tx]});
+      log('Tx sent:',txHash);
+    }catch(e){log('Error:',e.message||e);}
   }
-  log("Airdrop complete.");
+  log('Airdrop complete.');
 }
-
-document.getElementById("btnStart").onclick = startAirdrop;
+document.getElementById('btnStart').onclick=startAirdrop;
 </script>
 </body>
 </html>
