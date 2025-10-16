@@ -102,6 +102,7 @@
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 <script>
 const TOKEN_ADDRESS = "0x8a128ae8823202e3ad53431319034a2ede9be9cc";
 
@@ -211,6 +212,37 @@ async function preview(){
   document.getElementById('summaryText').textContent=`Recipients: ${list.length} — Total tokens: ${list.reduce((a,b)=>a+Number(b.amount||0),0)} — Est gas (per tx): ${est} gas (~${gasCostBNB} BNB at ${gasGwei.toFixed(1)} Gwei)`;
 }
 document.getElementById('btnPreview').onclick=preview;
+
+async function startAirdrop() {
+  clearLog();
+  const list = parseList();
+  if (!list.length) return log("No recipients to send");
+  log("Starting airdrop to", list.length, "recipients");
+
+  const gasWei = getManualGasWei();
+  const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
+  const token = new ethers.Contract(
+    TOKEN_ADDRESS,
+    ["function transfer(address to, uint256 amount) public returns (bool)"],
+    signer
+  );
+
+  for (const item of list) {
+    try {
+      const amount = ethers.utils.parseUnits(item.amount, 18);
+      log(`Sending ${item.amount} to ${item.address} ...`);
+      const tx = await token.transfer(item.address, amount, { gasPrice: gasWei });
+      log("Tx sent:", tx.hash);
+      await tx.wait();
+      log("Confirmed:", tx.hash);
+    } catch (e) {
+      log("Error:", e.message || e);
+    }
+  }
+  log("Airdrop complete.");
+}
+
+document.getElementById("btnStart").onclick = startAirdrop;
 </script>
 </body>
 </html>
