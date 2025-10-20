@@ -1,17 +1,496 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BitLoTop | Official Site</title>
-<link rel="stylesheet" href="style.css"><link rel="icon" href="favicon.ico"></head><body>
-<header class="nav"><div class="container"><a class="brand" href="#"><img src="assets/logo.png" class="logo"></a><nav class="menu"><a href="#about">About</a><a href="#price">Live Price</a><a href="#branding">Branding</a><a href="#team">Team</a><a href="#contracts">Contracts</a><a href="pages/privacy.html">Privacy</a><a href="bitlotop-whitepaper.pdf" target="_blank" class="btn">Whitepaper</a></nav><div class="right"><a class="btn primary" href="#buy">Buy</a></div></div></header>
-<section class="hero"><img src="assets/bitlotop-banner.png" class="banner"><div class="hero-overlay container"><h1>BitLoTop (BitLoTop)</h1><p class="tagline">A Bit of Crypto to Rise to the Top</p><p class="muted">Contract: <code>0x8A128ae8823202e3ad53431319034A2eDe9Be9CC</code></p><div class="cta"><a class="btn primary" href="#buy">Buy BitLoTop</a><a class="btn ghost" href="bitlotop-whitepaper.pdf" target="_blank">Read Whitepaper</a></div></div></section>
-<main class="container main-content">
-<section id="price" class="card"><h2>Live Price</h2><div id="priceCard" class="price-card"><div class="price-title">Current BitLoTop Price</div><div id="livePrice" class="price-value">Loading...</div><div id="priceTime" class="price-time muted">Updated: --</div></div></section>
-<section id="buy" class="card"><h2>Buy BitLoTop</h2><p>To buy BitLoTop, connect your wallet and perform a swap on PancakeSwap.</p><p><a class="btn primary" id="openPancake" href="https://pancakeswap.finance/swap?outputCurrency=0x8A128ae8823202e3ad53431319034A2eDe9Be9CC" target="_blank">Open PancakeSwap</a></p></section>
-<section id="branding" class="card"><h2>Branding & Partners</h2><div class="branding-grid"><div class="branding-card"><img src="assets/DESK.png" alt="Desk image"></div><div class="branding-card partners"><h3>Listed On</h3><div class="partners-logos"><a href="https://www.geckoterminal.com/bsc/pools/0x4ed6b9730a414292214067022ad5ef4c196c17a2" target="_blank"><img src="assets/geckoterminal.png" alt="GeckoTerminal"></a><a href="https://dex.coinmarketcap.com/token/bsc/0x8A128ae8823202e3ad53431319034A2eDe9Be9CC/" target="_blank"><img src="assets/coinmarketcap_dex.png" alt="CoinMarketCap Dex"></a></div><p class="muted">View live pool data and market metrics on GeckoTerminal and CMC Dex.</p></div></div></section>
-<section id="team" class="card"><h2>Team</h2><div class="team-grid"><div class="team-member"><h4>Bryn Voss</h4><p>Founder & Governance Architect</p></div><div class="team-member"><h4>Imani Ortega</h4><p>Treasury & Compliance Lead</p></div><div class="team-member"><h4>Tarek Lin</h4><p>CTO & Blockchain Architect</p></div><div class="team-member"><h4>Leora Nash</h4><p>Privacy Systems Lead</p></div><div class="team-member"><h4>Oren Silva</h4><p>Validator & Infrastructure Lead</p></div><div class="team-member"><h4>Tova Mendel</h4><p>Smart Contract Engineer</p></div><div class="team-member"><h4>Olaya Serrano</h4><p>Community & DAO Product Manager</p></div><div class="team-member"><h4>Pasha Velez</h4><p>Core Developer</p></div></div></section>
-<section id="contracts" class="card"><h2>Contract History & Transparency</h2><ul class="contracts-list"><li><strong>V1:</strong> 0x379907622C1f6d9d284B3D99Fe500A1e14005605 — <span class="burned">Burned</span></li><li><strong>V2:</strong> 0xC32D6714cf2ed9EB81598326614009136D7dDA79 — <span class="burned">Burned</span></li><li><strong>V3:</strong> 0x6Cd7C4ab29529C38aC4bbf3F8F0C8a580A82031E — <span class="burned">Burned</span></li><li><strong>V4 (Final):</strong> <a href="https://bscscan.com/address/0x8A128ae8823202e3ad53431319034A2eDe9Be9CC" target="_blank">0x8A128ae8823202e3ad53431319034A2eDe9Be9CC</a> — <span class="active">Active</span></li></ul></section>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BitLoTop (BITLOTOP) - Crypto Lot to Rise to the Top</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      background: #f9faff;
+      color: #222;
+    }
+    header {
+      background: #004080;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    header p {
+      margin: 0;
+      font-style: italic;
+      font-weight: 300;
+      font-size: 1rem;
+    }
+    header nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      margin-left: 1.5rem;
+    }
+    header nav a:hover {
+      text-decoration: underline;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    section {
+      margin-bottom: 2.5rem;
+      background: white;
+      padding: 1.8rem 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 64, 128, 0.1);
+    }
+    section h2 {
+      color: #004080;
+      margin-top: 0;
+    }
+    /* Core Team grid */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .team-member {
+      background: #e6f0ff;
+      padding: 1.2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 64, 128, 0.1);
+      text-align: center;
+    }
+    .team-member h3 {
+      margin: 0 0 0.5rem 0;
+      color: #004080;
+      font-size: 1.1rem;
+    }
+    .team-member p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #333;
+    }
+    /* Contact Links styling */
+    .contact-links a {
+      display: inline-block;
+      margin: 0.3rem 1rem 0.3rem 0;
+      color: #004080;
+      text-decoration: none;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    .contact-links a:hover {
+      text-decoration: underline;
+    }
+    /* Privacy and Disclaimer */
+    .privacy, .disclaimer {
+      font-size: 0.95rem;
+      color: #444;
+    }
+    .privacy p, .disclaimer p {
+      margin: 0.8rem 0;
+    }
+	
+	
+	.scanner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+    gap: 1.2rem;
+  }
+  .scanner-box {
+    background: #f0f8ff;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-decoration: none;
+    color: #004080;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .scanner-box img {
+    max-height: 50px;
+    width: auto;
+  }
+  .scanner-box span {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .scanner-box:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>BitLoTop (BITLOTOP)</h1>
+    <p>A crypto lot to rise to the top</p>
+  </div>
+  <nav>
+    <a href="/bitlotop-whitepaper.pdf" target="_blank" rel="noopener noreferrer">Whitepaper</a>
+  </nav>
+</header>
+
+<main>
+<section class="section" id="about">
+ <img src="https://www.bitlo.top/assets/bitlotop-banner.png" alt="BitLoTop" width="100%" />
+  
+  </section>
+  
+  <section id="about">
+    <h2>About</h2>
+    <p>
+      BitLoTop (BITLOTOP) is a crypto token that helps people grow their digital wealth. It combines crypto power with real-world business investments. Profits from these businesses are reinvested into the token to keep it strong and stable. BitLoTop’s goal is to turn a bit into a lot — for everyone in the community.
+    </p>
+  </section>
+  <section class="section" id="overview">
+  <h2>Overview</h2>
+  <table>
+    <tbody>
+      <tr>
+        <th>Token Name</th>
+        <td>BitLoTop</td>
+      </tr>
+      <tr>
+        <th>Symbol</th>
+        <td>BitLoTop</td>
+      </tr>
+      <tr>
+        <th>Blockchain</th>
+        <td>BNB Smart Chain (BEP-20)</td>
+      </tr>
+      <tr>
+        <th>Total Supply</th>
+        <td>1,000,000,000 BitLoTop</td>
+      </tr>
+      <tr>
+        <th>Transaction Fee</th>
+        <td>0.1% per transaction</td>
+      </tr>
+      <tr>
+        <th>Final Contract Address</th>
+        <td>0x8A128ae8eDe9Be9CC</td>
+      </tr>
+    </tbody>
+  </table>
+  </section>
+<section class="section" id="about">
+  <h2>Vision</h2>
+  <p>BitLoTop reinvests real-world business profits into its ecosystem to create a stable, growth-oriented token built for transparency and community empowerment.</p>
+</section>
+<section id="coin-scanners" style="padding: 2rem 1rem; max-width:1200px; margin: 0 auto;">
+  <h2 style="text-align:center; margin-bottom:1.5rem; color:#004080;">Coin Scanners & Trackers</h2>
+  <div class="scanner-grid">
+    <a href="https://bscscan.com/token/0x8a128ae8823202e3ad53431319034a2ede9be9cc" target="_blank" rel="noopener noreferrer" class="scanner-box" title="BscScan">
+      <img src="https://bscscan.com/favicon.ico" alt="BscScan" />
+      <span>BscScan</span>
+    </a>
+    <a href="https://pancakeswap.finance/swap?outputCurrency=0x8A128ae8823202e3ad53431319034A2eDe9Be9CC&chain=bsc" target="_blank" rel="noopener noreferrer" class="scanner-box" title="PancakeSwap">
+      <img src="https://pancakeswap.finance/favicon.ico" alt="PancakeSwap" />
+      <span>PancakeSwap</span>
+    </a>
+    <a href="https://www.geckoterminal.com/bsc/pools/0x4ed6b9730a414292214067022ad5ef4c196c17a2" target="_blank" rel="noopener noreferrer" class="scanner-box" title="GeckoTerminal">
+      <img src="https://www.coingecko.com/favicon.ico" alt="GeckoTerminal" />
+      <span>GeckoTerminal</span>
+    </a>
+    <a href="https://dex.coinmarketcap.com/token/bsc/0x8A128ae8823202e3ad53431319034A2eDe9Be9CC/" target="_blank" rel="noopener noreferrer" class="scanner-box" title="CoinMarketCap DEX">
+      <img src="https://coinmarketcap.com/favicon.ico" alt="CoinMarketCap DEX" />
+      <span>CoinMarketCap</span>
+    </a>
+    
+    <a href="https://skynet.certik.com/tools/token-scan/bsc/0x8a128ae8823202e3ad53431319034a2ede9be9cc" target="_blank" rel="noopener noreferrer" class="scanner-box" title="Certik Skynet">
+      <img src="https://skynet.certik.com/favicon-192.png" alt="Certik Skynet" />
+      <span>Certik</span>
+    </a>
+    <a href="https://www.dextools.io/app/en/bnb/pair-explorer/0x4ed6b9730a414292214067022ad5ef4c196c17a2?t=1760524713328" target="_blank" rel="noopener noreferrer" class="scanner-box" title="Dextools">
+      <img src="https://www.dextools.io/app/favicon.ico" alt="Dextools" />
+      <span>Dextools</span>
+    </a>
+	  <a href="https://dexscreener.com/bsc/0x8A128ae8823202e3ad53431319034A2eDe9Be9CC" target="_blank" rel="noopener noreferrer" class="scanner-box" title="Dexscreener">
+      <img src="https://dexscreener.com/favicon.ico" alt="Dexscreener" />
+      <span>Dexscreener</span>
+    </a>
+    <a href="https://cryptach.org/en/scan/0x8a128ae8823202e3ad53431319034a2ede9be9cc/bsc" target="_blank" rel="noopener noreferrer" class="scanner-box" title="Cryptach">
+      <img src="https://cryptach.org/favicon.ico" alt="Cryptach" />
+      <span>Cryptach</span>
+    </a>
+	
+	 <a href="https://apespace.io/bsc/0x8a128ae8823202e3ad53431319034a2ede9be9cc" target="_blank" rel="noopener noreferrer" class="scanner-box" title="apespace">
+      <img src="https://apespace.io/favicon.png" alt="apespace" />
+      <span>Apespace</span>
+    </a>
+	 <a href="https://gopluslabs.io/token-security/56/0x8A128ae8823202e3ad53431319034A2eDe9Be9CC" target="_blank" rel="noopener noreferrer" class="scanner-box" title="gopluslabs">
+      <img src="https://gopluslabs.io/assets/logo-2f05926d.png" alt="gopluslabs" />
+      <span>Gopluslabs</span>
+    </a>
+  </div>
+</section>
+
+
+
+
+
+<section class="section" id="about">
+<h2>Burn Strategy</h2>
+  <p>BitLoTop follows a gradual burn model. Tokens and liquidity are burned periodically over time based on transaction volume, staking, and buyback events. This approach maintains long-term deflation and market balance.</p>
+
+  </section>
+  
+  <section class="section" id="about">
+<h2>Contract History & Transparency</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Address</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>V1</td>
+        <td>0x379907622C1f6d9d284B3D99Fe500A1e14005605</td>
+        <td>2025-10-14</td>
+        <td>🔥 Burned (sent to dead wallet)</td>
+      </tr>
+      <tr>
+        <td>V2</td>
+        <td>0x6Cd7C4ab29529C38aC4bbf3F8F0C8a580A82031E</td>
+        <td>2025-10-14</td>
+        <td>🔥 Burned (sent to dead wallet)</td>
+      </tr>
+      <tr>
+        <td>V3</td>
+        <td>0xC32D6714cf2ed9EB81598326614009136D7dDA79</td>
+        <td>2025-10-14</td>
+        <td>🔥 Burned (sent to dead wallet)</td>
+      </tr>
+      <tr>
+        <td>V4 (Final)</td>
+        <td>0x8A128ae8823202e3ad53431319034A2eDe9Be9CC</td>
+        <td>2025-10-14</td>
+        <td>✅ Active & Verified</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><em>All earlier versions were permanently sent to the burn address (0x000000000000000000000000000000000000dEaD) to ensure transparency and prevent reuse.</em></p>
+
+  </section>
+  
+  <section class="section" id="about">
+  <h2>Liquidity & Security</h2>
+  <p>Liquidity is locked for community trust and stability via Mudra Locker with on-chain proof.</p>
+  <p><a href="https://bscscan.com/token/0x8A128ae8823202e3ad53431319034A2eDe9Be9CC?a=0x7fd9a8b6d4fc7912b1f60f5ec695d413a67b8072" target="_blank" rel="noopener noreferrer">Transaction Proof</a></p>
+
+  </section>
+  
+  
+  <section class="section" id="about">
+  
+   <h2>Tokenomics</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>%</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Public Pool</td>
+        <td>50%</td>
+        <td>Circulating supply for trading & staking</td>
+      </tr>
+      <tr>
+        <td>Strategic Reserve</td>
+        <td>30%</td>
+        <td>Team, treasury, marketing</td>
+      </tr>
+      <tr>
+        <td>Liquidity Pool</td>
+        <td>15%</td>
+        <td>Locked on PancakeSwap</td>
+      </tr>
+      <tr>
+        <td>Community Rewards</td>
+        <td>5%</td>
+        <td>Airdrops, staking bonuses</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+
+ 
+  <section id="utility-roadmap-team">
+    <h2>Utility</h2>
+    <ul>
+      <li>Staking and yield rewards</li>
+      <li>Community and referral bonuses</li>
+      <li>Real-world profit sharing</li>
+      <li>DAO governance for holders</li>
+    </ul>
+
+    <h2>Roadmap</h2>
+    <ul>
+      <li>Phase 1: Token launch and burn</li>
+      <li>Phase 2: Marketing and airdrops</li>
+      <li>Phase 3: Staking and listings</li>
+      <li>Phase 4: DAO setup</li>
+      <li>Phase 5: Real-world investment growth</li>
+    </ul>
+
+    <h2>Core Team</h2>
+    <div class="team-grid">
+      <div class="team-member">
+        <h3>Bryn Voss</h3>
+        <p>Founder & Governance Architect</p>
+      </div>
+      <div class="team-member">
+        <h3>Imani Ortega</h3>
+        <p>Treasury Lead</p>
+      </div>
+      <div class="team-member">
+        <h3>Tarek Lin</h3>
+        <p>CTO & Blockchain Architect</p>
+      </div>
+      <div class="team-member">
+        <h3>Olaya Serrano</h3>
+        <p>DAO Product Manager</p>
+      </div>
+      <div class="team-member">
+        <h3>Leora Nash</h3>
+        <p>Privacy Systems Lead</p>
+      </div>
+      <div class="team-member">
+        <h3>Oren Silva</h3>
+        <p>Validator & Infrastructure Lead</p>
+      </div>
+      <div class="team-member">
+        <h3>Tova Mendel</h3>
+        <p>Smart Contract Engineer</p>
+      </div>
+      <div class="team-member">
+        <h3>Pasha Velez</h3>
+        <p>Core Developer</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact-links">
+    <h2>Contact & Links</h2>
+    <div class="contact-links">
+      <p>Email: <a href="mailto:info@bitlo.top">info@bitlo.top</a></p>
+      <p>Telegram: <a href="https://t.me/bitlotop" target="_blank" rel="noopener noreferrer">https://t.me/bitlotop</a></p>
+      <p>Twitter: <a href="https://x.com/bitlotop" target="_blank" rel="noopener noreferrer">https://x.com/bitlotop</a></p>
+      <p>BscScan: <a href="https://bscscan.com/token/0x8a128ae8823202e3ad53431319034a2ede9be9cc" target="_blank" rel="noopener noreferrer">https://bscscan.com/token/0x8a128ae8823202e3ad53431319034a2ede9be9cc</a></p>
+      <!-- You can add more links here if you want -->
+    </div>
+  </section>
+
+ <section id="privacy" class="privacy">
+  <h2>Privacy Policy</h2>
+  <p>Effective Date: October 20, 2025</p>
+
+  <p>Welcome to BitLoTop! The BitLoTop Foundation ("we," "our," or "us") is committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you interact with our services, including the BitLoTop crypto token ("BitLoTop," "BLOT," or the "Token") and related platforms.</p>
+
+  <h3>1. Information We Collect</h3>
+  <p>We collect the following types of information:</p>
+  <ul>
+    <li><strong>Personal Information:</strong> This may include your name, email address, contact details, and any other information you provide when you contact us or participate in community activities.</li>
+    <li><strong>Transactional Data:</strong> Details about your transactions involving BitLoTop tokens, including blockchain transaction records that are publicly available on the Binance Smart Chain.</li>
+    <li><strong>Usage Data:</strong> Information about how you use our website or platforms, including IP addresses, browser types, device information, and activity logs.</li>
+    <li><strong>Cookies and Tracking Technologies:</strong> We use cookies and similar technologies to improve your experience, analyze traffic, and personalize content.</li>
+  </ul>
+
+  <h3>2. How We Use Your Information</h3>
+  <p>We use the information collected for purposes including but not limited to:</p>
+  <ul>
+    <li>Providing, operating, and maintaining the BitLoTop ecosystem and related services.</li>
+    <li>Communicating with you regarding updates, promotions, and community activities.</li>
+    <li>Ensuring security and preventing fraudulent or illegal activity.</li>
+    <li>Complying with legal obligations such as Anti-Money Laundering (AML) and Counter-Terrorism Financing (CTF) regulations.</li>
+    <li>Improving and personalizing your user experience.</li>
+  </ul>
+
+  <h3>3. Anti-Money Laundering (AML) and Compliance</h3>
+  <p>The BitLoTop Foundation strictly adheres to global AML policies and takes proactive steps to prevent money laundering and terrorist financing through our platforms. We may monitor transactions and user activities and cooperate with regulatory authorities as required by law.</p>
+
+  <h3>4. Cookies and Tracking</h3>
+  <p>Our website uses cookies and similar tracking technologies to collect information about your browsing behavior. Cookies help us:</p>
+  <ul>
+    <li>Remember your preferences and settings.</li>
+    <li>Analyze website traffic and usage patterns.</li>
+    <li>Deliver personalized content and advertisements.</li>
+  </ul>
+  <p>You can control or disable cookies via your browser settings, but this may affect your user experience.</p>
+
+  <h3>5. How We Share Your Information</h3>
+  <p>We do not sell, trade, or rent your personal information to third parties. We may share your data:</p>
+  <ul>
+    <li>With trusted service providers who assist us in operating the BitLoTop ecosystem.</li>
+    <li>When required by law, regulation, or legal process.</li>
+    <li>To protect the rights, property, or safety of BitLoTop, our community, or others.</li>
+  </ul>
+
+  <h3>6. Security</h3>
+  <p>We implement industry-standard security measures to protect your information from unauthorized access, disclosure, or alteration. However, no method of transmission over the internet is completely secure.</p>
+
+  <h3>7. Your Rights</h3>
+  <p>You may have rights under applicable laws to access, correct, or delete your personal data. To exercise these rights, please contact us at <a href="mailto:info@bitlo.top">info@bitlo.top</a>.</p>
+
+  <h3>8. Children’s Privacy</h3>
+  <p>BitLoTop does not knowingly collect personal information from children under 13 years of age. If we become aware that we have inadvertently collected data from a child, we will take steps to delete it.</p>
+
+  <h3>9. Changes to This Privacy Policy</h3>
+  <p>We may update this Privacy Policy from time to time. We encourage you to review it periodically. Continued use of our services after changes indicates your acceptance of the updated policy.</p>
+
+  <h3>10. Contact Us</h3>
+  <p>If you have any questions or concerns regarding this Privacy Policy, please contact us:</p>
+  <ul>
+    <li>Email: <a href="mailto:info@bitlo.top">info@bitlo.top</a></li>
+    <li>Telegram: <a href="https://t.me/bitlotop" target="_blank" rel="noopener noreferrer">https://t.me/bitlotop</a></li>
+    <li>Twitter: <a href="https://x.com/bitlotop" target="_blank" rel="noopener noreferrer">https://x.com/bitlotop</a></li>
+  </ul>
+</section>
+
+
+  <section id="disclaimer" class="disclaimer">
+    <h2>Disclaimer</h2>
+    <p>Buying, selling, or holding BitLoTop tokens involves risk. Prices can be volatile and may fluctuate rapidly.</p>
+    <p>BitLoTop Foundation and its team do not take responsibility for any financial losses incurred from trading or investing in the token.</p>
+    <p>Please conduct your own research and invest responsibly.</p>
+  </section>
+
 </main>
-<footer class="footer"><div class="container"><p>© 2025 BitLoTop Foundation • Built for stability and community growth.</p><p class="muted">Contact: <a href="mailto:info@bitlo.top">info@bitlo.top</a> • <a href="https://t.me/BitLoTopCommunity" target="_blank">Telegram</a> • <a href="https://twitter.com/BitLoTop" target="_blank">X</a></p></div></footer>
+<footer style="background:#004080; color:#fff; text-align:center; padding:1rem 0; font-size:0.9rem; margin-top:2rem;">
+  <p>
+    &copy; 2025</span> BitLoTop Foundation. All rights reserved. BitLoTop (BitLoTop) is a product of BitLoTop Foundation.
+  </p>
+</footer>
+
 <script>
-async function fetchPrice(){try{const res=await fetch("https://api.geckoterminal.com/api/v2/networks/bsc/pools/0x4ed6b9730a414292214067022ad5ef4c196c17a2");const data=await res.json();const price=data.data.attributes.base_token_price_usd;const time=new Date().toLocaleString();document.getElementById('livePrice').innerText=price?('$'+Number(price).toFixed(6)):'N/A';document.getElementById('priceTime').innerText='Updated: '+time;}catch(e){console.error(e);document.getElementById('livePrice').innerText='Error';}}fetchPrice();setInterval(fetchPrice,60000);
-</script></body></html>
+  // Automatically update the copyright year
+  document.getElementById('currentYear').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
