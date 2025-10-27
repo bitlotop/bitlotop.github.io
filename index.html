@@ -574,19 +574,24 @@
   // Automatically update the copyright year
   document.getElementById('currentYear').textContent = new Date().getFullYear();
 </script>
+
+
+
+
+
 <!-- 💬 BitLoTop Disqus Comment Section -->
 <div id="disqus_thread"></div>
 
 <script>
-    // ✅ Optional: Configure Disqus for dynamic pages
+    // ✅ Disqus Configuration
     var disqus_config = function () {
-        this.page.url = window.location.href;  // Use the current page URL
-        this.page.identifier = document.title; // Or use a unique ID if your CMS supports it
+        this.page.url = window.location.href;  // Canonical page URL
+        this.page.identifier = document.title; // Unique page identifier
     };
 
-    (function() {  // 🚀 Load Disqus
+    (function() {  // 🚀 Load Disqus embed
         var d = document, s = d.createElement('script');
-        s.src = 'https://bitlotop.disqus.com/embed.js'; // Your Disqus shortname
+        s.src = 'https://bitlotop.disqus.com/embed.js'; // Replace with your shortname
         s.setAttribute('data-timestamp', +new Date());
         (d.head || d.body).appendChild(s);
     })();
@@ -598,8 +603,13 @@
         comments powered by Disqus.
     </a>
 </noscript>
+
+	
+	<script id="dsq-count-scr" src="//bitlotop.disqus.com/count.js" async></script>
+
 </body>
 </html>
+
 
 
 
